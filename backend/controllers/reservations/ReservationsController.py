@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
-from models.reservations.ReservationsModel import *
-from models.users.UsersModel import User
-from models.rooms.RoomsModel import Room
+from backend.models.reservations.ReservationsModel import *
+from backend.models.users.UsersModel import User
+from backend.models.rooms.RoomsModel import Room
 
 
 class ReservationsController:
