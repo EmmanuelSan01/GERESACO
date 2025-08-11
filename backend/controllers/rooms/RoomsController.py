@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
-from models.rooms.RoomsModel import Room, RoomCreate, RoomRead, RoomUpdate, SedeEnum
+from models.rooms.RoomsModel import *
 
 
 class RoomsController:
