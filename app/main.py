@@ -1,11 +1,16 @@
 from fastapi import FastAPI
-# from app.auth.controller import router as auth_router
-from app.routes.example_route import router as example_router
 
-app = FastAPI()
+from dotenv import load_dotenv
+load_dotenv()
 
-# app.include_router(auth_router, prefix="/api/auth")
-app.include_router(example_router, prefix="/api")
+from backend.core.db import create_db_and_tables
+
+app = FastAPI(title="GERESACO API", version="1.0.0")
+
+@app.on_event("startup")
+def on_startup():
+    # Crea las tablas si no existen
+    create_db_and_tables()
 
 @app.get("/")
 def health_check():
@@ -13,4 +18,6 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=False)
+
+    # Ejecutar con: python -m app.main
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
