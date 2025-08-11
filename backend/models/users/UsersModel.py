@@ -14,7 +14,7 @@ class RolEnum(str, Enum):
 
 class UserBase(SQLModel):
     nombre: str = Field(min_length=1, max_length=255)
-    email: str = Field(index=True)
+    email: str
     contrasena_hash: str = Field(description="Hash de la contraseña del usuario")
     rol: RolEnum = Field(default=RolEnum.user)
 
@@ -22,7 +22,7 @@ class User(UserBase, table=True):
     __tablename__ = "user"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    email: str = Field(index=True, unique=True)
+    email: str = Field(unique=True)
 
     # Relationships
     reservas: List["Reservation"] = Relationship(back_populates="usuario")
