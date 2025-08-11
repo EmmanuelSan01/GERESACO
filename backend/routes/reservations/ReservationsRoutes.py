@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
-from backend.ontrollers.reservations.ReservationsController import ReservationsController
+from backend.controllers.reservations.ReservationsController import ReservationsController
 from backend.core.db import get_session
 from backend.models.reservations.ReservationsModel import *
 

@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Optional, TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy.orm import Mapped
 
 if TYPE_CHECKING:
     from models.users.UsersModel import User
@@ -29,9 +30,9 @@ class Reservation(ReservationBase, table=True):
     usuario_id: int = Field(foreign_key="user.id", index=True)
     sala_id: int = Field(foreign_key="room.id", index=True)
 
-    # Relationships
-    usuario: "User" = Relationship(back_populates="reservas")
-    sala: "Room" = Relationship(back_populates="reservas")
+    # Use Mapped for relationships
+    usuario: Mapped["User"] = Relationship(back_populates="reservas")
+    sala: Mapped["Room"] = Relationship(back_populates="reservas")
 
 class ReservationCreate(ReservationBase):
     usuario_id: int
