@@ -19,6 +19,9 @@ engine = create_engine(get_database_url(), echo=False)
 
 
 def create_db_and_tables() -> None:
+    # Imports intentionally inside the function to avoid circular imports.
+    from backend.models.users.UsersModel import User
+
     SQLModel.metadata.create_all(engine)
 
 
