@@ -9,7 +9,6 @@ from pydantic import field_validator
 if TYPE_CHECKING:
     from models.reservations.ReservationsModel import Reservation
 
-
 class SedeEnum(str, Enum):
     zona_franca = "Campus Zona Franca"
     cajasan = "Campus Cajasan"
@@ -17,12 +16,10 @@ class SedeEnum(str, Enum):
     cucuta = "Campus Medical"
     guatemala = "Campus 502"
 
-
 class RecursoEnum(str, Enum):
     pizarra = "pizarra"
     proyector = "proyector"
     televisor = "televisor"
-
 
 class RoomBase(SQLModel):
     nombre: str = Field(min_length=1, max_length=255)
@@ -56,7 +53,6 @@ class RoomBase(SQLModel):
         # Checks if the room has a specific resource
         return recurso in self.get_recursos_set()
 
-
 class Room(RoomBase, table=True):
     __tablename__ = "room"
 
@@ -65,10 +61,8 @@ class Room(RoomBase, table=True):
     # Relationships
     reservas: List["Reservation"] = Relationship(back_populates="sala")
 
-
 class RoomCreate(RoomBase):
     pass
-
 
 class RoomRead(SQLModel):
     id: int
@@ -80,7 +74,6 @@ class RoomRead(SQLModel):
     def get_recursos_list(self) -> List[str]:
         # Returns the resources as a list
         return [r.strip() for r in self.recursos.split(',') if r.strip()]
-
 
 class RoomUpdate(SQLModel):
     nombre: Optional[str] = None
