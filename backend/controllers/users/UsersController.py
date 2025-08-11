@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
-from models.users.UsersModel import *
+from backend.models.users.UsersModel import *
 
 class UsersController:
     def __init__(self, session: Session):

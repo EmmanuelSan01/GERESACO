@@ -3,9 +3,9 @@ from typing import List
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
-from controllers.users.UsersController import UsersController
-from core.db import get_session
-from models.users.UsersModel import UserCreate, UserRead, UserUpdate
+from backend.controllers.users.UsersController import UsersController
+from backend.core.db import get_session
+from backend.models.users.UsersModel import UserCreate, UserRead, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
