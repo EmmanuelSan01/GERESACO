@@ -7,8 +7,8 @@ from typing import Optional, TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from models.users.UsersModel import User
-    from models.rooms.RoomsModel import Room
+    from backend.models.users.UsersModel import User
+    from backend.models.rooms.RoomsModel import Room
 
 class EstadoReservaEnum(str, Enum):
     pendiente = "pendiente"
@@ -29,9 +29,8 @@ class Reservation(ReservationBase, table=True):
     usuario_id: int = Field(foreign_key="user.id", index=True)
     sala_id: int = Field(foreign_key="room.id", index=True)
 
-    # Relationships
-    usuario: "User" = Relationship(back_populates="reservas")
-    sala: "Room" = Relationship(back_populates="reservas")
+    usuario: Optional["User"] = Relationship(back_populates="reservas")
+    sala: Optional["Room"] = Relationship(back_populates="reservas")
 
 class ReservationCreate(ReservationBase):
     usuario_id: int

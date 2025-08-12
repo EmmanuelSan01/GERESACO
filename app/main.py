@@ -1,16 +1,44 @@
 from fastapi import FastAPI
-
 from dotenv import load_dotenv
+import os
+import sys
+from contextlib import asynccontextmanager
+
+# Cargar variables de entorno
 load_dotenv()
 
+# Ajustar sys.path para que siempre encuentre backend
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from backend.core.db import create_db_and_tables
+from backend.routes.users.UsersRoutes import router as users_router
+from backend.routes.rooms.RoomsRoutes import router as rooms_router
+from backend.routes.reservations.ReservationsRoutes import router as reservations_router
 
-app = FastAPI(title="GERESACO API", version="1.0.0")
+from backend.models.users.UsersModel import User
+from backend.models.rooms.RoomsModel import Room
+from backend.models.reservations.ReservationsModel import Reservation
 
-@app.on_event("startup")
-def on_startup():
-    # Create the tables if they don't exist
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("INFO:     Application startup complete. Creating database and tables...")
     create_db_and_tables()
+    yield
+    print("INFO:     Application shutdown.")
+
+app = FastAPI(
+    title="GERESACO API",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# Incluir rutas
+app.include_router(users_router)
+app.include_router(rooms_router)
+app.include_router(reservations_router)
 
 @app.get("/")
 def health_check():
@@ -18,6 +46,4 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-
-    # Run with: python -m app.main
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

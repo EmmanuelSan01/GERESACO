@@ -6,7 +6,7 @@ from typing import List, Optional, TYPE_CHECKING
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from models.reservations.ReservationsModel import Reservation
+    from backend.models.reservations.ReservationsModel import Reservation
 
 class RolEnum(str, Enum):
     user = "user"
@@ -22,9 +22,8 @@ class User(UserBase, table=True):
     __tablename__ = "user"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    email: str = Field(unique=True)
+    email: str = Field(unique=True, index=True)
 
-    # Relationships
     reservas: List["Reservation"] = Relationship(back_populates="usuario")
 
 class UserCreate(UserBase):

@@ -21,6 +21,10 @@ class UsersController:
             )
         return UserRead.model_validate(user)
 
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        stmt = select(User).where(User.email == email)
+        return self.session.exec(stmt).first()
+
     def create_user(self, data: UserCreate) -> UserRead:
         # Enforce unique email
         if self.get_user_by_email(data.email):
