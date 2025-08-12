@@ -22,6 +22,7 @@ from backend.core.db import create_db_and_tables
 from backend.routes.users.UsersRoutes import router as users_router
 from backend.routes.rooms.RoomsRoutes import router as rooms_router
 from backend.routes.reservations.ReservationsRoutes import router as reservations_router
+from backend.routes.auth.AuthRoutes import router as auth_router
 
 from backend.models.users.UsersModel import User
 from backend.models.rooms.RoomsModel import Room
@@ -44,6 +45,7 @@ app = FastAPI(
 app.include_router(users_router)
 app.include_router(rooms_router)
 app.include_router(reservations_router)
+app.include_router(auth_router)
 
 @app.get("/")
 def health_check():
