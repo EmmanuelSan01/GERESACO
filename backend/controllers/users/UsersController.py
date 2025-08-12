@@ -21,6 +21,38 @@ class UsersController:
             )
         return UserRead.model_validate(user)
 
+    def get_user_with_reservations(self, user_id: int) -> UserReadWithReservations:
+        """Get user with their reservations using manual join"""
+        user = self.session.get(User, user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado"
+            )
+        
+        # Manual query to get reservations
+        from backend.models.reservations.ReservationsModel import Reservation
+        reservations_query = select(Reservation).where(Reservation.usuario_id == user_id)
+        reservations = self.session.exec(reservations_query).all()
+        
+        # Convert to dict format
+        reservations_dict = [
+            {
+                "id": r.id,
+                "fecha": r.fecha.isoformat(),
+                "hora_inicio": r.hora_inicio.strftime("%H:%M:%S"),
+                "hora_fin": r.hora_fin.strftime("%H:%M:%S"),
+                "estado": r.estado,
+                "sala_id": r.sala_id
+            }
+            for r in reservations
+        ]
+        
+        user_data = UserRead.model_validate(user)
+        return UserReadWithReservations(
+            **user_data.model_dump(),
+            reservas=reservations_dict
+        )
+
     def get_user_by_email(self, email: str) -> Optional[User]:
         stmt = select(User).where(User.email == email)
         return self.session.exec(stmt).first()
@@ -67,5 +99,18 @@ class UsersController:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado"
             )
+        
+        # Check if user has reservations
+        from backend.models.reservations.ReservationsModel import Reservation
+        reservations = self.session.exec(
+            select(Reservation).where(Reservation.usuario_id == user_id)
+        ).all()
+        
+        if reservations:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No se puede eliminar el usuario porque tiene reservas asociadas"
+            )
+        
         self.session.delete(user)
         self.session.commit()

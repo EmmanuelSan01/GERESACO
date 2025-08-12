@@ -5,7 +5,6 @@ from sqlmodel import Session, select
 
 from backend.models.rooms.RoomsModel import *
 
-
 class RoomsController:
     def __init__(self, session: Session):
         self.session = session
@@ -38,6 +37,38 @@ class RoomsController:
             )
         return RoomRead.model_validate(room)
 
+    def get_room_with_reservations(self, room_id: int) -> RoomReadWithReservations:
+        """Get room with its reservations using manual join"""
+        room = self.session.get(Room, room_id)
+        if not room:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Sala no encontrada"
+            )
+        
+        # Manual query to get reservations
+        from backend.models.reservations.ReservationsModel import Reservation
+        reservations_query = select(Reservation).where(Reservation.sala_id == room_id)
+        reservations = self.session.exec(reservations_query).all()
+        
+        # Convert to dict format
+        reservations_dict = [
+            {
+                "id": r.id,
+                "fecha": r.fecha.isoformat(),
+                "hora_inicio": r.hora_inicio.strftime("%H:%M:%S"),
+                "hora_fin": r.hora_fin.strftime("%H:%M:%S"),
+                "estado": r.estado,
+                "usuario_id": r.usuario_id
+            }
+            for r in reservations
+        ]
+        
+        room_data = RoomRead.model_validate(room)
+        return RoomReadWithReservations(
+            **room_data.model_dump(),
+            reservas=reservations_dict
+        )
+
     def create_room(self, data: RoomCreate) -> RoomRead:
         room = Room(**data.model_dump())
         self.session.add(room)
@@ -65,5 +96,19 @@ class RoomsController:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Sala no encontrada"
             )
+        
+        # Check if room has reservations
+        from backend.models.reservations.ReservationsModel import Reservation
+        reservations = self.session.exec(
+            select(Reservation).where(Reservation.sala_id == room_id)
+        ).all()
+        
+        if reservations:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No se puede eliminar la sala porque tiene reservas asociadas"
+            )
+        
         self.session.delete(room)
         self.session.commit()
+        
