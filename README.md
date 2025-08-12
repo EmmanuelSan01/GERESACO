@@ -1,4 +1,4 @@
-# GERESACO - Gestor de Reservas de Salas de Conferencias
+# GERESACO - Gestor de Reservas de Salas de Coworking
 
 Una API REST completa para la gestión de reservas de salas de conferencias, desarrollada con FastAPI y SQLModel.
 
