@@ -7,13 +7,17 @@ from sqlmodel import Session
 from backend.controllers.reservations.ReservationsController import ReservationsController
 from backend.core.db import get_session
 from backend.models.reservations.ReservationsModel import *
+from app.auth.controller import get_current_user, require_admin
+from app.auth.model import TokenData
 
 router = APIRouter(prefix="/reservations", tags=["reservations"])
 
 
 @router.post("/", response_model=ReservationRead, status_code=status.HTTP_201_CREATED)
 def create_reservation(
-    data: ReservationCreate, session: Session = Depends(get_session)
+    data: ReservationCreate, 
+    session: Session = Depends(get_session),
+    current_user: TokenData = Depends(get_current_user)
 ):
     """Create a new reservation"""
     return ReservationsController(session).create_reservation(data)
@@ -24,9 +28,23 @@ def list_reservations(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     session: Session = Depends(get_session),
+    current_user: TokenData = Depends(get_current_user)
 ):
     """Get all reservations with user and room details"""
     return ReservationsController(session).list_reservations_with_details(skip=skip, limit=limit)
+
+
+@router.get("/me", response_model=List[ReservationReadWithDetails])
+def get_my_reservations(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    session: Session = Depends(get_session),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """Get current user's reservations with details"""
+    return ReservationsController(session).get_reservations_by_user(
+        current_user.user_id, skip=skip, limit=limit
+    )
 
 
 @router.get("/room/{room_id}", response_model=List[ReservationReadWithDetails])
@@ -54,7 +72,8 @@ def get_reservations_by_date(
 @router.delete("/{reservation_id}", response_model=ReservationRead)
 def cancel_reservation(
     reservation_id: int = Path(..., description="ID of the reservation to cancel"),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: TokenData = Depends(get_current_user)
 ):
     """Cancel a reservation (sets status to 'cancelada')"""
     return ReservationsController(session).cancel_reservation(reservation_id)
@@ -69,7 +88,10 @@ def get_reservation(reservation_id: int, session: Session = Depends(get_session)
 
 @router.patch("/{reservation_id}", response_model=ReservationRead)
 def update_reservation(
-    reservation_id: int, data: ReservationUpdate, session: Session = Depends(get_session)
+    reservation_id: int, 
+    data: ReservationUpdate, 
+    session: Session = Depends(get_session),
+    current_user: TokenData = Depends(get_current_user)
 ):
     """Update a reservation"""
     return ReservationsController(session).update_reservation(reservation_id, data)
