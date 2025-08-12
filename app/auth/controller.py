@@ -3,12 +3,14 @@ from typing import Optional
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session
+import logging
 
 from app.auth.service import AuthService
 from app.auth.model import UserRegisterRequest, UserLogin, Token, TokenData
 from backend.controllers.users.UsersController import UsersController
 from backend.models.users.UsersModel import UserCreate, User, RolEnum
 
+logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
 class AuthController:
@@ -91,26 +93,49 @@ class AuthController:
             role=token_data["role"]
         )
 
-# Dependency functions for FastAPI
+# Create a single instance of AuthService for dependencies
+_auth_service = AuthService()
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> TokenData:
-    """Dependency to get current user"""
-    auth_service = AuthService()
-    token = credentials.credentials
-    token_data = auth_service.verify_token(token)
-    
-    return TokenData(
-        email=token_data["email"],
-        user_id=token_data["user_id"],
-        role=token_data["role"]
-    )
+    """Dependency to get current user - FIXED VERSION"""
+    try:
+        token = credentials.credentials
+        logger.info(f"Received token in dependency: {token[:20]}...")
+        
+        token_data = _auth_service.verify_token(token)
+        
+        result = TokenData(
+            email=token_data["email"],
+            user_id=token_data["user_id"],
+            role=token_data["role"]
+        )
+        
+        logger.info(f"Successfully authenticated user: {result.email} (ID: {result.user_id})")
+        return result
+        
+    except HTTPException as e:
+        logger.error(f"Authentication failed: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"Unexpected error in get_current_user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Error de autenticación: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 def require_admin(current_user: TokenData = Depends(get_current_user)) -> TokenData:
     """Dependency to require admin role"""
+    logger.info(f"Checking admin privileges for user: {current_user.email} (role: {current_user.role})")
+    
     if current_user.role != "admin":
+        logger.warning(f"Access denied for user {current_user.email} - not admin")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acceso denegado. Se requieren permisos de administrador"
         )
+    
+    logger.info(f"Admin access granted for user: {current_user.email}")
     return current_user

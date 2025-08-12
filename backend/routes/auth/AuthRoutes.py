@@ -3,7 +3,8 @@ from sqlmodel import Session
 
 from app.auth.controller import AuthController, get_current_user
 from app.auth.model import UserRegisterRequest, UserLogin, Token
-from backend.core.db import get_session 
+from backend.core.db import get_session
+from backend.controllers.users.UsersController import UsersController
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -43,33 +44,19 @@ def login(
 
 @router.post("/verify-token")
 def verify_token(
-    credentials = Depends(lambda: None)
+    current_user = Depends(get_current_user)
 ):
     """
     Verify if the provided token is valid
     
     Requires Authorization header with Bearer token
     """
-    from app.auth.controller import get_current_user
-    from fastapi.security import HTTPBearer
-    from fastapi import Depends
-    
-    security = HTTPBearer()
-    
-    def verify_endpoint(credentials = Depends(security)):
-        # Use the dependency to verify token
-        from app.auth.service import AuthService
-        auth_service = AuthService()
-        token_data = auth_service.verify_token(credentials.credentials)
-        
-        return {
-            "valid": True,
-            "user_id": token_data["user_id"],
-            "email": token_data["email"],
-            "role": token_data["role"]
-        }
-    
-    return verify_endpoint()
+    return {
+        "valid": True,
+        "user_id": current_user.user_id,
+        "email": current_user.email,
+        "role": current_user.role
+    }
 
 @router.get("/me")
 def get_current_user_profile(
@@ -81,8 +68,6 @@ def get_current_user_profile(
     
     Requires Authorization header with Bearer token
     """
-    from backend.controllers.users.UsersController import UsersController
-    
     users_controller = UsersController(session)
     user = users_controller.get_user(current_user.user_id)
     return user

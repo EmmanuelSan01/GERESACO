@@ -16,7 +16,9 @@ def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     session: Session = Depends(get_session),
+    current_user: TokenData = Depends(get_current_user)  # Added authentication requirement
 ):
+    """List all users - requires authentication"""
     return UsersController(session).list_users(skip=skip, limit=limit)
 
 @router.get("/me", response_model=UserRead)
@@ -28,7 +30,12 @@ def get_current_user_profile(
     return UsersController(session).get_user(current_user.user_id)
 
 @router.get("/{user_id}", response_model=UserRead)
-def get_user(user_id: int, session: Session = Depends(get_session)):
+def get_user(
+    user_id: int, 
+    session: Session = Depends(get_session),
+    current_user: TokenData = Depends(get_current_user)  # Added authentication requirement
+):
+    """Get user by ID - requires authentication"""
     return UsersController(session).get_user(user_id)
 
 @router.post(
@@ -39,6 +46,7 @@ def create_user(
     session: Session = Depends(get_session),
     current_user: TokenData = Depends(require_admin)
 ):
+    """Create new user - requires admin privileges"""
     return UsersController(session).create_user(data)
 
 @router.patch("/{user_id}", response_model=UserRead)
@@ -48,6 +56,7 @@ def update_user(
     session: Session = Depends(get_session),
     current_user: TokenData = Depends(require_admin)
 ):
+    """Update user - requires admin privileges"""
     return UsersController(session).update_user(user_id, data)
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -56,5 +65,6 @@ def delete_user(
     session: Session = Depends(get_session),
     current_user: TokenData = Depends(require_admin)
 ):
+    """Delete user - requires admin privileges"""
     UsersController(session).delete_user(user_id)
     return None

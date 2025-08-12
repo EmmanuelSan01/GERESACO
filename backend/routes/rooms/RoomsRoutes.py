@@ -19,15 +19,21 @@ def list_rooms(
     sede: Optional[SedeEnum] = Query(None, description="Filtrar por sede"),
     recurso: Optional[str] = Query(None, description="Filtrar por recurso específico"),
     session: Session = Depends(get_session),
-    current_user: TokenData = Depends(get_current_user)  # For authentication
+    current_user: TokenData = Depends(get_current_user)
 ):
+    """List rooms - requires authentication"""
     return RoomsController(session).list_rooms(
         skip=skip, limit=limit, sede=sede, recurso=recurso
     )
 
 
 @router.get("/{room_id}", response_model=RoomRead)
-def get_room(room_id: int, session: Session = Depends(get_session)):
+def get_room(
+    room_id: int, 
+    session: Session = Depends(get_session),
+    current_user: TokenData = Depends(get_current_user)  # Added authentication requirement
+):
+    """Get room by ID - requires authentication"""
     return RoomsController(session).get_room(room_id)
 
 
@@ -35,8 +41,9 @@ def get_room(room_id: int, session: Session = Depends(get_session)):
 def create_room(
     data: RoomCreate, 
     session: Session = Depends(get_session),
-    current_user: TokenData = Depends(require_admin)  # Only admin
+    current_user: TokenData = Depends(require_admin)
 ):
+    """Create room - requires admin privileges"""
     return RoomsController(session).create_room(data)
 
 
@@ -45,8 +52,9 @@ def update_room(
     room_id: int, 
     data: RoomUpdate, 
     session: Session = Depends(get_session),
-    current_user: TokenData = Depends(require_admin)  # Only admin
+    current_user: TokenData = Depends(require_admin)
 ):
+    """Update room - requires admin privileges"""
     return RoomsController(session).update_room(room_id, data)
 
 
@@ -54,7 +62,8 @@ def update_room(
 def delete_room(
     room_id: int, 
     session: Session = Depends(get_session),
-    current_user: TokenData = Depends(require_admin)  # Only admin
+    current_user: TokenData = Depends(require_admin)
 ):
+    """Delete room - requires admin privileges"""
     RoomsController(session).delete_room(room_id)
     return None
