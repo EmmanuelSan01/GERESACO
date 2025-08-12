@@ -238,8 +238,8 @@ La aplicación incluye una interfaz de consola interactiva que permite:
 
 ## 🏢 Sedes Disponibles
 
-- `zona_franca` - Zona Franca
-- `cajasan` - Cajasán
+- `zona_franca` - Zona Franca Santander
+- `cajasan` - Cajasan
 - `bogota` - Bogotá
 - `cucuta` - Cúcuta
 - `guatemala` - Guatemala
@@ -249,8 +249,6 @@ La aplicación incluye una interfaz de consola interactiva que permite:
 - `proyector` - Proyector
 - `pizarra` - Pizarra
 - `televisor` - Televisor
-- `WiFi` - Conexión WiFi
-- `computadores` - Computadores
 
 ## 📅 Estados de Reserva
 
