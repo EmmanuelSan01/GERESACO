@@ -1,37 +1,27 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional, Set, TYPE_CHECKING
+from typing import List, Optional
 
-from sqlmodel import Field, Relationship, SQLModel
-from pydantic import field_validator
-
-if TYPE_CHECKING:
-    from backend.models.reservations.ReservationsModel import Reservation
+from sqlmodel import Field, SQLModel
 
 class SedeEnum(str, Enum):
-    zona_franca = "Campus Zona Franca"
-    cajasan = "Campus Cajasan"
-    bogota = "Campus EAN"
-    cucuta = "Campus Medical"
-    guatemala = "Campus 502"
-
-class RecursoEnum(str, Enum):
-    pizarra = "pizarra"
-    proyector = "proyector"
-    televisor = "televisor"
+    zona_franca = "zona_franca"
+    cajasan = "cajasan"
+    bogota = "bogota"
+    cucuta = "cucuta"
+    guatemala = "guatemala"
 
 class RoomBase(SQLModel):
     nombre: str = Field(min_length=1, max_length=255)
+    sede: SedeEnum
     capacidad: int = Field(gt=0, description="Capacidad máxima de la sala")
-    descripcion: Optional[str] = None
+    recursos: str = Field(description="Recursos disponibles en la sala")
 
 class Room(RoomBase, table=True):
     __tablename__ = "room"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-
-    reservas: List["Reservation"] = Relationship(back_populates="sala")
 
 class RoomCreate(RoomBase):
     pass
@@ -39,10 +29,16 @@ class RoomCreate(RoomBase):
 class RoomRead(SQLModel):
     id: int
     nombre: str
+    sede: SedeEnum
     capacidad: int
-    descripcion: Optional[str] = None
+    recursos: str
 
 class RoomUpdate(SQLModel):
     nombre: Optional[str] = None
+    sede: Optional[SedeEnum] = None
     capacidad: Optional[int] = None
-    descripcion: Optional[str] = None
+    recursos: Optional[str] = None
+
+# Extended read model that includes reservations when needed
+class RoomReadWithReservations(RoomRead):
+    reservas: Optional[List[dict]] = None

@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional
 
-from sqlmodel import Field, Relationship, SQLModel
-
-if TYPE_CHECKING:
-    from backend.models.reservations.ReservationsModel import Reservation
+from sqlmodel import Field, SQLModel
 
 class RolEnum(str, Enum):
     user = "user"
@@ -24,8 +21,6 @@ class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
 
-    reservas: List["Reservation"] = Relationship(back_populates="usuario")
-
 class UserCreate(UserBase):
     pass
 
@@ -40,3 +35,7 @@ class UserUpdate(SQLModel):
     email: Optional[str] = None
     contrasena_hash: Optional[str] = None
     rol: Optional[RolEnum] = None
+
+# Extended read model that includes reservations when needed
+class UserReadWithReservations(UserRead):
+    reservas: Optional[List[dict]] = None
