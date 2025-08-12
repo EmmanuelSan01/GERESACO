@@ -9,7 +9,7 @@ app = FastAPI(title="GERESACO API", version="1.0.0")
 
 @app.on_event("startup")
 def on_startup():
-    # Crea las tablas si no existen
+    # Create the tables if they don't exist
     create_db_and_tables()
 
 @app.get("/")
@@ -19,5 +19,5 @@ def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    # Ejecutar con: python -m app.main
+    # Run with: python -m app.main
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
