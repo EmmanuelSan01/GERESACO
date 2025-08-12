@@ -1,15 +1,13 @@
-from typing import List, Optional
-from datetime import datetime, timedelta
-
+from datetime import date
+from typing import List
 from fastapi import HTTPException, status
-from sqlmodel import Session, select
-
-from backend.models.reservations.ReservationsModel import *
+from sqlmodel import select
 from backend.models.users.UsersModel import User
 from backend.models.rooms.RoomsModel import Room
+from backend.models.reservations.ReservationsModel import Reservation, ReservationRead, ReservationReadWithDetails, ReservationCreate, EstadoReservaEnum
 
 class ReservationsController:
-    def __init__(self, session: Session):
+    def __init__(self, session):
         self.session = session
 
     def _ensure_user_and_room(self, usuario_id: int, sala_id: int) -> None:
@@ -25,6 +23,7 @@ class ReservationsController:
             )
 
     def _validate_time_range(self, hora_inicio, hora_fin) -> None:
+        from datetime import datetime, timedelta
         if hora_fin <= hora_inicio:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -93,40 +92,6 @@ class ReservationsController:
             )
         return ReservationRead.model_validate(reservation)
 
-    def get_reservation_with_details(self, reservation_id: int) -> ReservationReadWithDetails:
-        """Get reservation with user and room details"""
-        reservation = self.session.get(Reservation, reservation_id)
-        if not reservation:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Reserva no encontrada"
-            )
-        
-        # Get user details
-        user = self.session.get(User, reservation.usuario_id)
-        user_dict = {
-            "id": user.id,
-            "nombre": user.nombre,
-            "email": user.email,
-            "rol": user.rol
-        } if user else None
-        
-        # Get room details
-        room = self.session.get(Room, reservation.sala_id)
-        room_dict = {
-            "id": room.id,
-            "nombre": room.nombre,
-            "sede": room.sede,
-            "capacidad": room.capacidad,
-            "recursos": room.recursos
-        } if room else None
-        
-        reservation_data = ReservationRead.model_validate(reservation)
-        return ReservationReadWithDetails(
-            **reservation_data.model_dump(),
-            usuario=user_dict,
-            sala=room_dict
-        )
-
     def create_reservation(self, data: ReservationCreate) -> ReservationRead:
         self._ensure_user_and_room(data.usuario_id, data.sala_id)
         self._validate_time_range(data.hora_inicio, data.hora_fin)
@@ -137,9 +102,7 @@ class ReservationsController:
         self.session.refresh(reservation)
         return ReservationRead.model_validate(reservation)
 
-    def update_reservation(
-        self, reservation_id: int, data: ReservationUpdate
-    ) -> ReservationRead:
+    def update_reservation(self, reservation_id: int, data) -> ReservationRead:
         reservation = self.session.get(Reservation, reservation_id)
         if not reservation:
             raise HTTPException(
@@ -148,7 +111,7 @@ class ReservationsController:
 
         update_data = data.model_dump(exclude_unset=True)
 
-        # Validate foreign keys if being updated (not typical for PATCH, but covered)
+        # Validate foreign keys if being updated
         usuario_id = update_data.get("usuario_id", reservation.usuario_id)
         sala_id = update_data.get("sala_id", reservation.sala_id)
         self._ensure_user_and_room(usuario_id, sala_id)
@@ -166,26 +129,108 @@ class ReservationsController:
         self.session.refresh(reservation)
         return ReservationRead.model_validate(reservation)
 
-    def delete_reservation(self, reservation_id: int) -> None:
+    def get_reservations_by_room(self, sala_id: int, skip: int = 0, limit: int = 100) -> List[ReservationReadWithDetails]:
+        """Get all reservations for a specific room"""
+        # First check if room exists
+        if not self.session.get(Room, sala_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sala no encontrada",
+            )
+        
+        reservations = self.session.exec(
+            select(Reservation)
+            .where(Reservation.sala_id == sala_id)
+            .offset(skip)
+            .limit(limit)
+        ).all()
+        
+        result = []
+        for reservation in reservations:
+            # Get user details
+            user = self.session.get(User, reservation.usuario_id)
+            user_dict = {
+                "id": user.id,
+                "nombre": user.nombre,
+                "email": user.email,
+                "rol": user.rol
+            } if user else None
+            
+            # Get room details
+            room = self.session.get(Room, reservation.sala_id)
+            room_dict = {
+                "id": room.id,
+                "nombre": room.nombre,
+                "sede": room.sede,
+                "capacidad": room.capacidad,
+                "recursos": room.recursos
+            } if room else None
+            
+            reservation_data = ReservationRead.model_validate(reservation)
+            result.append(ReservationReadWithDetails(
+                **reservation_data.model_dump(),
+                usuario=user_dict,
+                sala=room_dict
+            ))
+        
+        return result
+
+    def get_reservations_by_date(self, fecha: date, skip: int = 0, limit: int = 100) -> List[ReservationReadWithDetails]:
+        """Get all reservations for a specific date"""
+        reservations = self.session.exec(
+            select(Reservation)
+            .where(Reservation.fecha == fecha)
+            .offset(skip)
+            .limit(limit)
+        ).all()
+        
+        result = []
+        for reservation in reservations:
+            # Get user details
+            user = self.session.get(User, reservation.usuario_id)
+            user_dict = {
+                "id": user.id,
+                "nombre": user.nombre,
+                "email": user.email,
+                "rol": user.rol
+            } if user else None
+            
+            # Get room details
+            room = self.session.get(Room, reservation.sala_id)
+            room_dict = {
+                "id": room.id,
+                "nombre": room.nombre,
+                "sede": room.sede,
+                "capacidad": room.capacidad,
+                "recursos": room.recursos
+            } if room else None
+            
+            reservation_data = ReservationRead.model_validate(reservation)
+            result.append(ReservationReadWithDetails(
+                **reservation_data.model_dump(),
+                usuario=user_dict,
+                sala=room_dict
+            ))
+        
+        return result
+
+    def cancel_reservation(self, reservation_id: int) -> ReservationRead:
+        """Cancel a reservation by setting its status to 'cancelada'"""
         reservation = self.session.get(Reservation, reservation_id)
         if not reservation:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Reserva no encontrada"
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Reserva no encontrada"
             )
-        self.session.delete(reservation)
-        self.session.commit()
-
-    def check_room_availability(self, sala_id: int, fecha, hora_inicio, hora_fin) -> bool:
-        # Check if a room is available for a given time slot
-        existing_reservations = self.session.exec(
-            select(Reservation).where(
-                Reservation.sala_id == sala_id,
-                Reservation.fecha == fecha,
-                Reservation.estado != "cancelada",
-                # Check for time overlap
-                Reservation.hora_inicio < hora_fin,
-                Reservation.hora_fin > hora_inicio
-            )
-        ).all()
         
-        return len(existing_reservations) == 0
+        if reservation.estado == "cancelada":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La reserva ya está cancelada"
+            )
+        
+        reservation.estado = "cancelada"
+        self.session.add(reservation)
+        self.session.commit()
+        self.session.refresh(reservation)
+        return ReservationRead.model_validate(reservation)
