@@ -2,7 +2,12 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 import os
 import sys
+import logging
 from contextlib import asynccontextmanager
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Cargar variables de entorno
 load_dotenv()
@@ -24,10 +29,10 @@ from backend.models.reservations.ReservationsModel import Reservation
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("INFO:     Application startup complete. Creating database and tables...")
+    logger.info("\tApplication startup complete. Creating database and tables...")
     create_db_and_tables()
     yield
-    print("INFO:     Application shutdown.")
+    logger.info("\tApplication shutdown.")
 
 app = FastAPI(
     title="GERESACO API",
