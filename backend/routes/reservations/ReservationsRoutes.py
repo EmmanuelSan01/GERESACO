@@ -32,6 +32,19 @@ def list_reservations(
     return ReservationsController(session).list_reservations_with_details(skip=skip, limit=limit)
 
 
+@router.get("/me", response_model=List[ReservationReadWithDetails])
+def get_my_reservations(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    session: Session = Depends(get_session),
+    current_user: TokenData = Depends(get_current_user)
+):
+    """Get current user's reservations with details"""
+    return ReservationsController(session).get_reservations_by_user(
+        current_user.user_id, skip=skip, limit=limit
+    )
+
+
 @router.get("/room/{room_id}", response_model=List[ReservationReadWithDetails])
 def get_reservations_by_room(
     room_id: int = Path(..., description="ID of the room"),

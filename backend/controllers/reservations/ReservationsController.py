@@ -129,6 +129,52 @@ class ReservationsController:
         self.session.refresh(reservation)
         return ReservationRead.model_validate(reservation)
 
+    def get_reservations_by_user(self, usuario_id: int, skip: int = 0, limit: int = 100) -> List[ReservationReadWithDetails]:
+        """Get all reservations for a specific user"""
+        # First check if user exists
+        if not self.session.get(User, usuario_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuario no encontrado",
+            )
+        
+        reservations = self.session.exec(
+            select(Reservation)
+            .where(Reservation.usuario_id == usuario_id)
+            .offset(skip)
+            .limit(limit)
+        ).all()
+        
+        result = []
+        for reservation in reservations:
+            # Get user details
+            user = self.session.get(User, reservation.usuario_id)
+            user_dict = {
+                "id": user.id,
+                "nombre": user.nombre,
+                "email": user.email,
+                "rol": user.rol
+            } if user else None
+            
+            # Get room details
+            room = self.session.get(Room, reservation.sala_id)
+            room_dict = {
+                "id": room.id,
+                "nombre": room.nombre,
+                "sede": room.sede,
+                "capacidad": room.capacidad,
+                "recursos": room.recursos
+            } if room else None
+            
+            reservation_data = ReservationRead.model_validate(reservation)
+            result.append(ReservationReadWithDetails(
+                **reservation_data.model_dump(),
+                usuario=user_dict,
+                sala=room_dict
+            ))
+        
+        return result
+
     def get_reservations_by_room(self, sala_id: int, skip: int = 0, limit: int = 100) -> List[ReservationReadWithDetails]:
         """Get all reservations for a specific room"""
         # First check if room exists
