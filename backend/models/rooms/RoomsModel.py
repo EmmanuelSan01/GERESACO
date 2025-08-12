@@ -5,10 +5,9 @@ from typing import List, Optional, Set, TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 from pydantic import field_validator
-from sqlalchemy.orm import Mapped
 
 if TYPE_CHECKING:
-    from models.reservations.ReservationsModel import Reservation
+    from backend.models.reservations.ReservationsModel import Reservation
 
 class SedeEnum(str, Enum):
     zona_franca = "Campus Zona Franca"
@@ -32,8 +31,7 @@ class Room(RoomBase, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
 
-    # Use Mapped for the list-based relationship
-    reservas: Mapped[List["Reservation"]] = Relationship(back_populates="sala")
+    reservas: List["Reservation"] = Relationship(back_populates="sala")
 
 class RoomCreate(RoomBase):
     pass
@@ -43,7 +41,6 @@ class RoomRead(SQLModel):
     nombre: str
     capacidad: int
     descripcion: Optional[str] = None
-
 
 class RoomUpdate(SQLModel):
     nombre: Optional[str] = None

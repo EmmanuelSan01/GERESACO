@@ -4,10 +4,9 @@ from enum import Enum
 from typing import List, Optional, TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
-from sqlalchemy.orm import Mapped
 
 if TYPE_CHECKING:
-    from models.reservations.ReservationsModel import Reservation
+    from backend.models.reservations.ReservationsModel import Reservation
 
 class RolEnum(str, Enum):
     user = "user"
@@ -25,8 +24,7 @@ class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
 
-    # Use Mapped for the list-based relationship
-    reservas: Mapped[List["Reservation"]] = Relationship(back_populates="usuario")
+    reservas: List["Reservation"] = Relationship(back_populates="usuario")
 
 class UserCreate(UserBase):
     pass
